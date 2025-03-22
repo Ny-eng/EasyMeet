@@ -2,8 +2,16 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 
 // Supabaseの設定値を環境変数から取得
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string || '';
+// クライアント側で確実に環境変数を取得するための工夫
+function getEnvVar(key: string): string {
+  const value = import.meta.env[key] as string || '';
+  
+  // デバッグ情報
+  console.log(`環境変数 ${key} を取得: ${value ? '設定されています' : '設定されていません'}`);
+  
+  return value;
+}
+const supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
 
 // Supabaseが設定されているかどうかを確認
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
