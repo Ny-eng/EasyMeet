@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# 環境変数の確認
+echo "環境変数を確認しています..."
+if [ -n "$VITE_SUPABASE_URL" ] && [ -n "$VITE_SUPABASE_ANON_KEY" ]; then
+  echo "Supabase環境変数が設定されています"
+else
+  echo "警告: Supabase環境変数が設定されていません"
+fi
+
 # テーマファイルをクライアントディレクトリにコピー、もしくはダミーファイルを作成
 echo "テーマファイルをコピーしています..."
 if [ -f "theme.json" ]; then
