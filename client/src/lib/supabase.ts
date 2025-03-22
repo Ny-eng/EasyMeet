@@ -4,10 +4,26 @@ import type { Database } from '@/types/supabase';
 // Supabaseの設定値を環境変数から取得
 // クライアント側で確実に環境変数を取得するための工夫
 function getEnvVar(key: string): string {
-  const value = import.meta.env[key] as string || '';
+  // 複数の環境変数名を試す（Vercel Integration対応）
+  const keys = key.startsWith('VITE_SUPABASE_') 
+    ? [key, key.replace('VITE_', '')] // VITE_SUPABASE_URL → SUPABASE_URL も試す
+    : [key];
   
-  // デバッグ情報
-  console.log(`環境変数 ${key} を取得: ${value ? '設定されています' : '設定されていません'}`);
+  let value = '';
+  
+  // 複数の可能な環境変数名を順番に試す
+  for (const k of keys) {
+    const v = import.meta.env[k] as string || '';
+    if (v) {
+      value = v;
+      console.log(`環境変数 ${k} を取得: 設定されています`);
+      break;
+    }
+  }
+  
+  if (!value) {
+    console.log(`警告: 環境変数 ${keys.join(' または ')} が設定されていません`);
+  }
   
   return value;
 }
