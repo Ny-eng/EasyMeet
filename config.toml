@@ -1,0 +1,31 @@
+# Supabaseプロジェクト設定ファイル
+
+# プロジェクト情報
+[project]
+# プロジェクト参照ID（実際のプロジェクトIDに置き換えてください）
+# ref = "your-project-ref"
+
+# API設定
+[api]
+# 匿名利用を許可
+enabled_apis = ["rest", "graphql", "storage"]
+port = 54321
+
+# Postgres設定
+[db]
+# データベースポート
+port = 54322
+# シャドウデータベース（マイグレーション用）
+shadow_port = 54320
+
+# 認証設定
+[auth]
+# デフォルトのローカルサイトURL
+site_url = "http://localhost:3000"
+# 追加の許可されたリダイレクトURL
+additional_redirect_urls = ["https://your-production-domain.com"]
+
+# 機能設定
+[functions]
+[functions.cleanup-expired-events]
+verify_jwt = false  # このエッジ関数ではJWT検証を無効化（スケジュールされたタスクから呼び出すため）
