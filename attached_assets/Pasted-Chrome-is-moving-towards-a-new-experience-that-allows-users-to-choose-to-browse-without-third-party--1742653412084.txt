@@ -1,0 +1,59 @@
+Chrome is moving towards a new experience that allows users to choose to browse without third-party cookies.Understand this warningAI
+index-sGGuT2Bf.js:48 
+            
+            
+           POST https://easy-meet-hzvmnn7qf-yuutonagi1405yuu-gmailcoms-projects.vercel.app/api/events 405 (Method Not Allowed)
+Zp @ index-sGGuT2Bf.js:48
+mutationFn @ index-sGGuT2Bf.js:173
+fn @ index-sGGuT2Bf.js:48
+x @ index-sGGuT2Bf.js:48
+start @ index-sGGuT2Bf.js:48
+execute @ index-sGGuT2Bf.js:48
+await in execute
+mutate @ index-sGGuT2Bf.js:48
+(anonymous) @ index-sGGuT2Bf.js:48
+(anonymous) @ index-sGGuT2Bf.js:173
+(anonymous) @ index-sGGuT2Bf.js:133
+await in (anonymous)
+sD @ index-sGGuT2Bf.js:37
+iD @ index-sGGuT2Bf.js:37
+aD @ index-sGGuT2Bf.js:37
+Pg @ index-sGGuT2Bf.js:37
+PS @ index-sGGuT2Bf.js:37
+(anonymous) @ index-sGGuT2Bf.js:37
+Mp @ index-sGGuT2Bf.js:40
+Gb @ index-sGGuT2Bf.js:37
+Sd @ index-sGGuT2Bf.js:37
+lp @ index-sGGuT2Bf.js:37
+_D @ index-sGGuT2Bf.js:37Understand this errorAI
+index-sGGuT2Bf.js:173 Error submitting form: Error: 405: 
+    at i_ (index-sGGuT2Bf.js:48:42828)
+    at async Zp (index-sGGuT2Bf.js:48:43029)
+    at async Object.mutationFn (index-sGGuT2Bf.js:173:120308)
+mutationFn @ index-sGGuT2Bf.js:173
+await in mutationFn
+fn @ index-sGGuT2Bf.js:48
+x @ index-sGGuT2Bf.js:48
+start @ index-sGGuT2Bf.js:48
+execute @ index-sGGuT2Bf.js:48
+await in execute
+mutate @ index-sGGuT2Bf.js:48
+(anonymous) @ index-sGGuT2Bf.js:48
+(anonymous) @ index-sGGuT2Bf.js:173
+(anonymous) @ index-sGGuT2Bf.js:133
+await in (anonymous)
+sD @ index-sGGuT2Bf.js:37
+iD @ index-sGGuT2Bf.js:37
+aD @ index-sGGuT2Bf.js:37
+Pg @ index-sGGuT2Bf.js:37
+PS @ index-sGGuT2Bf.js:37
+(anonymous) @ index-sGGuT2Bf.js:37
+Mp @ index-sGGuT2Bf.js:40
+Gb @ index-sGGuT2Bf.js:37
+Sd @ index-sGGuT2Bf.js:37
+lp @ index-sGGuT2Bf.js:37
+_D @ index-sGGuT2Bf.js:37Understand this errorAI
+index-sGGuT2Bf.js:173 Mutation error: Error: 405: 
+    at i_ (index-sGGuT2Bf.js:48:42828)
+    at async Zp (index-sGGuT2Bf.js:48:43029)
+    at async Object.mutationFn (index-sGGuT2Bf.js:173:120308)
