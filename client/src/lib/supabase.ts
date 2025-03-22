@@ -11,7 +11,9 @@ function getEnvVar(key: string): string {
   
   return value;
 }
+
 const supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
+const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
 
 // Supabaseが設定されているかどうかを確認
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
