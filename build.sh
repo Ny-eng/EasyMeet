@@ -18,6 +18,12 @@ else
   echo "ダミーのテーマファイルを作成しました"
 fi
 
+# 環境変数を.envファイルとして保存
+echo "環境変数を.envファイルに書き出しています..."
+echo "VITE_SUPABASE_URL=$VITE_SUPABASE_URL" > client/.env
+echo "VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY" >> client/.env
+echo "DISABLE_THEME_PLUGIN=true" >> client/.env
+
 # npxを使用してviteとesbuildを実行するスクリプト
 echo "Viteでフロントエンドをビルドしています..."
 cd client
