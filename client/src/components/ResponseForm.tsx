@@ -63,79 +63,82 @@ export function ResponseForm({ event, responses, isPastDeadline }: ResponseFormP
     mutationFn: async (data: any) => {
       try {
         console.log("回答提出データ:", data);
-        console.log("環境変数チェック - VITE_SUPABASE_URL:", import.meta.env.VITE_SUPABASE_URL ? "設定あり" : "設定なし");
         
-        // Vercel環境での環境変数対応
-        const hasSupabaseConfig = 
-          !!(import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL) && 
-          !!(import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.SUPABASE_ANON_KEY);
-        
-        // Vercel環境かどうかを判定
-        const isVercelEnv = typeof window !== 'undefined' && 
-                          (window.location.hostname.includes('vercel.app') || 
-                           window.location.hostname.includes('.replit.app') ||
-                           window.location.hostname === 'localhost');
-                           
-        console.log("Vercel環境判定:", isVercelEnv ? "Vercel環境" : "ローカル環境");
-        
-        // Supabase APIが設定されている場合はそれを使用
-        if (hasSupabaseConfig) {
+        // Supabase APIを試みる
+        if (isSupabaseConfigured && supabase) {
+          console.log("Supabaseを使用して回答を作成します");
+          
+          // 明示的に event_id を設定する
+          const responseData = {
+            name: data.name,
+            event_id: event.id, 
+            availability: data.availability
+          };
+          
+          console.log("Supabaseに送信するデータ:", responseData);
+          
           try {
-            console.log("Supabase APIを使用して回答を作成します");
-            console.log("Supabase設定状態:", isSupabaseConfigured ? "設定済み" : "未設定");
-            
-            // Vercel環境または明示的に指定された場合は直接Supabaseを使用
-            if (isVercelEnv || import.meta.env.VITE_USE_DIRECT_SUPABASE === 'true') {
-              try {
-                console.log("createResponseDirectlyWithSupabase関数を使用して回答を作成します");
-                const response = await createResponseDirectlyWithSupabase({
-                  name: data.name,
-                  eventId: event.id,
-                  availability: data.availability
-                });
-                
-                console.log("createResponseDirectlyWithSupabaseの結果:", response);
-                return response;
-              } catch (directError) {
-                console.error("createResponseDirectlyWithSupabase使用エラー:", directError);
-                throw directError;
-              }
-            }
-            
-            // ローカル開発環境ではsupabaseApiRequestを使用
-            console.log("supabaseApiRequestを使用して回答を作成します");
-            const result = await supabaseApiRequest(`/api/events/${event.slug}/responses`, {
-              method: "POST",
-              body: JSON.stringify({
+            // まずは直接Supabaseを使用して作成を試みる
+            try {
+              console.log("直接Supabaseクライアントを使用して回答を作成します");
+              const directResult = await createResponseDirectlyWithSupabase({
                 name: data.name,
                 eventId: event.id,
                 availability: data.availability
-              })
+              });
+              console.log("直接Supabaseでの回答作成成功:", directResult);
+              return directResult;
+            } catch (directError) {
+              console.error("直接Supabase使用でのエラー:", directError);
+              console.log("APIリクエスト方式にフォールバックします");
+            }
+          
+            // APIリクエスト方式を試みる
+            const result = await supabaseApiRequest(`/api/events/${event.slug}/responses`, {
+              method: "POST",
+              body: JSON.stringify(responseData)
             });
-            console.log("supabaseApiRequestの結果:", result);
-            return result;
+            
+            if (result) {
+              console.log("Supabaseでの回答作成成功:", result);
+              return result;
+            }
           } catch (error) {
-            console.error("Error submitting response with Supabase:", error);
-            console.log("Supabaseでエラーが発生しました。ローカルAPIにフォールバックします");
-            // Supabaseでエラーが発生した場合、ローカルAPIにフォールバック
+            console.error("Supabase回答作成エラー:", error);
+            console.log("Supabaseでエラーが発生したため、ローカルAPIにフォールバックします");
+            // エラーの詳細を記録
+            if (error instanceof Error) {
+              console.error("エラーメッセージ:", error.message);
+              console.error("エラータイプ:", error.constructor.name);
+              console.error("スタックトレース:", error.stack);
+            } else {
+              console.error("不明なエラー:", error);
+            }
           }
-        } else {
-          console.log("Supabase設定が見つかりません。ローカルAPIを使用します");
         }
         
         // ローカルAPIを使用
+        console.log("ローカルAPIを使用して回答を作成します");
         try {
-          console.log("ローカルAPIを使用して回答を作成します");
-          const res = await apiRequest("POST", `/api/events/${event.slug}/responses`, data);
+          const res = await apiRequest("POST", `/api/events/${event.slug}/responses`, {
+            name: data.name,
+            event_id: event.id, // 明示的にevent_idを含める
+            availability: data.availability
+          });
+          
           const responseData = await res.json();
           console.log("ローカルAPIの結果:", responseData);
           return responseData;
-        } catch (error) {
-          console.error("Error submitting response with local API:", error);
-          throw error;
+        } catch (apiError) {
+          console.error("ローカルAPI呼び出しエラー:", apiError);
+          if (apiError instanceof Error) {
+            console.error("APIエラーメッセージ:", apiError.message);
+            console.error("APIエラースタック:", apiError.stack);
+          }
+          throw apiError;
         }
       } catch (error) {
-        console.error("Error submitting response:", error);
+        console.error("回答作成エラー:", error);
         throw error;
       }
     },
