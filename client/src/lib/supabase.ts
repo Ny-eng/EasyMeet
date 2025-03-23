@@ -12,12 +12,26 @@ function getEnvVar(key: string): string {
   let value = '';
   
   // 複数の可能な環境変数名を順番に試す
-  for (const k of keys) {
-    const v = import.meta.env[k] as string || '';
-    if (v) {
-      value = v;
-      console.log(`環境変数 ${k} を取得: 設定されています`);
-      break;
+  // クライアント側では import.meta.env を使用
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    for (const k of keys) {
+      const v = (import.meta.env[k] as string) || '';
+      if (v) {
+        value = v;
+        console.log(`クライアント: 環境変数 ${k} を取得: 設定されています`);
+        break;
+      }
+    }
+  } 
+  // サーバーサイドの場合は process.env を使用
+  else if (typeof process !== 'undefined' && process.env) {
+    for (const k of keys) {
+      const v = process.env[k] || '';
+      if (v) {
+        value = v;
+        console.log(`サーバー: 環境変数 ${k} を取得: 設定されています`);
+        break;
+      }
     }
   }
   
@@ -28,8 +42,9 @@ function getEnvVar(key: string): string {
   return value;
 }
 
-const supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
-const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
+// 開発環境のデフォルト値を設定
+const supabaseUrl = getEnvVar('VITE_SUPABASE_URL') || 'http://localhost:54321';
+const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 
 // Supabaseが設定されているかどうかを確認
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
@@ -194,28 +209,94 @@ export async function supabaseApiRequest<T = any>(
           // 新しいレスポンスを作成
           const body = JSON.parse(options.body as string);
           console.log('Creating new response. Body:', body);
-          const { data: response, error } = await supabase
-            .from('responses')
-            .insert(body)
-            .select()
-            .single();
+          
+          try {
+            // スラグからイベントIDを検索
+            if (pathParts[2] && !body.event_id) {
+              const slug = pathParts[2];
+              console.log(`イベントスラグから ID を取得: ${slug}`);
+              
+              try {
+                console.log('Supabaseの現在の接続状態:', !!supabase);
+                
+                // まずイベントテーブルの存在確認
+                console.log('イベントテーブルにアクセスを試みます');
+                const { data: tables, error: tableError } = await supabase
+                  .from('events')
+                  .select('id')
+                  .limit(1);
+                  
+                if (tableError) {
+                  console.error('イベントテーブルのアクセスエラー:', JSON.stringify(tableError, null, 2));
+                  throw new Error(`イベントテーブルにアクセスできません: ${tableError.message}`);
+                }
+                
+                console.log('イベントテーブルアクセス成功:', tables);
+                console.log('スラグでの検索を開始します:', slug);
+                
+                // スラグからイベントを検索
+                const { data: event, error: eventError } = await supabase
+                  .from('events')
+                  .select('id')
+                  .eq('slug', slug)
+                  .single();
+                  
+                if (eventError) {
+                  console.error('Error finding event by slug:', JSON.stringify(eventError, null, 2));
+                  throw new Error(`Event with slug '${slug}' not found: ${eventError.message}`);
+                }
+                
+                if (!event) {
+                  throw new Error(`Event with slug '${slug}' not found`);
+                }
+                
+                console.log(`イベントID取得成功: ${event.id}`);
+                body.event_id = event.id;
+              } catch (error) {
+                console.error(`スラグ '${slug}' からイベントIDの取得に失敗:`, error);
+                throw error;
+              }
+            }
             
-          if (error) {
-            console.error('Error creating response:', error);
-            throw new Error(error.message);
+            // eventIdをevent_idに変換（スラグからの検索が失敗した場合のバックアップ）
+            if (!body.event_id && body.eventId) {
+              body.event_id = body.eventId;
+              delete body.eventId;
+            }
+            
+            console.log('修正したリクエストボディ:', body);
+            
+            const { data: response, error } = await supabase
+              .from('responses')
+              .insert(body)
+              .select()
+              .single();
+              
+            if (error) {
+              console.error('Error creating response:', error);
+              console.error('Error details:', JSON.stringify(error, null, 2));
+              throw new Error(`Failed to create response: ${error.message}`);
+            }
+            
+            if (!response) {
+              throw new Error('Response creation succeeded but no data was returned');
+            }
+            
+            // クライアント側のコードと整合性を取るため、キー名を変換
+            const formattedResponse = {
+              id: response.id,
+              name: response.name,
+              eventId: response.event_id,
+              availability: response.availability,
+              createdAt: response.created_at
+            };
+            
+            console.log('Created and formatted response:', formattedResponse);
+            return formattedResponse as T;
+          } catch (error) {
+            console.error('Error in Supabase response creation:', error);
+            throw error;
           }
-          
-          // クライアント側のコードと整合性を取るため、キー名を変換
-          const formattedResponse = response ? {
-            id: response.id,
-            name: response.name,
-            eventId: response.event_id,
-            availability: response.availability,
-            createdAt: response.created_at
-          } : null;
-          
-          console.log('Created and formatted response:', formattedResponse);
-          return formattedResponse as T;
         }
       }
     }
@@ -335,6 +416,47 @@ export async function createResponseDirectlyWithSupabase(responseData: {
 
   try {
     console.log('直接Supabaseを使用してレスポンスを作成します:', responseData);
+
+    // まずイベントが存在するか確認
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('id')
+      .eq('id', responseData.eventId)
+      .single();
+    
+    if (eventError) {
+      console.error(`イベントID ${responseData.eventId} の確認中にエラーが発生しました:`, eventError);
+      
+      // イベントが見つからない場合は、slugからイベントを検索して試みる
+      if (eventError.code === "PGRST116") {
+        console.log("イベントIDが無効な可能性があります。イベントSlugで検索を試みます。");
+        
+        // もしイベントSlugがある場合は、そこからIDを取得
+        try {
+          const { data: eventBySlug, error: slugError } = await supabase
+            .from('events')
+            .select('id')
+            .eq('slug', responseData.eventId.toString())
+            .single();
+          
+          if (slugError) {
+            console.error("Slugでの検索にも失敗しました:", slugError);
+            throw new Error(`Event could not be found by ID or slug: ${responseData.eventId}`);
+          }
+          
+          if (eventBySlug) {
+            console.log(`Slugからイベントを見つけました。ID: ${eventBySlug.id}`);
+            responseData.eventId = eventBySlug.id;
+          }
+        } catch (slugSearchError) {
+          console.error("Slugでの検索中に例外が発生しました:", slugSearchError);
+          throw slugSearchError;
+        }
+      } else {
+        // その他のエラーの場合はそのままスロー
+        throw eventError;
+      }
+    }
     
     // レスポンスをSupabaseに挿入
     const { data: response, error: responseError } = await supabase
