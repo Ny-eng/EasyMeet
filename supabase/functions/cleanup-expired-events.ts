@@ -43,12 +43,20 @@ Deno.serve(async (req) => {
     // 期限切れイベントのIDを収集
     const expiredEventIds: number[] = [];
     for (const event of events) {
-      // 最後の提案日付を取得
-      const lastDate = new Date(event.dates[event.dates.length - 1]);
-      const expiryDate = new Date(lastDate);
-      expiryDate.setDate(expiryDate.getDate() + 14); // 最後の日付から14日後に削除
+      // すべての日付を正しくDateオブジェクトに変換
+      const dates = event.dates.map(d => new Date(d));
+      
+      // 最新の日付を取得（日付をミリ秒に変換して最大値を取得）
+      const latestDate = new Date(Math.max(...dates.map(d => d.getTime())));
+      
+      // 最新の日付から7日後に削除期限を設定
+      const expiryDate = new Date(latestDate);
+      expiryDate.setDate(expiryDate.getDate() + 7);
+      
+      console.log(`Event ${event.id}: Latest date: ${latestDate.toISOString()}, Expiry date: ${expiryDate.toISOString()}, Now: ${now.toISOString()}`);
       
       if (now > expiryDate) {
+        console.log(`Event ${event.id} is expired and will be deleted`);
         expiredEventIds.push(event.id);
       }
     }
